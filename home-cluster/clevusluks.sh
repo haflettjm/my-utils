@@ -4,6 +4,7 @@ set -euo pipefail
 echo "[*] Detecting root LUKS device..."
 ROOT_DEVICE=$(findmnt -no SOURCE /)
 LUKS_UUID=$(lsblk -no UUID "$ROOT_DEVICE")
+dnf install -y clevis clevis-luks clevis-systemd clevis-dracut clevis-udisks2 clevis-pin-tpm2 tpm2-tools
 
 CRYPTTAB="/etc/crypttab"
 

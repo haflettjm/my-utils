@@ -8,24 +8,27 @@ HOSTS=(
   "192.168.4.98"
 )
 
-# Path to your local vm-prep script
-SCRIPT_PATH="vm-prep.sh"
+# Local paths to your scripts
+SCRIPT1="vm-prep.sh"
+SCRIPT2="clevusluks.sh"
 
-SCRIPT_PATH2="clevusluks.sh"
-
-# Remote path to copy the script to
+# Remote directory to copy the scripts to
 REMOTE_PATH="/home/admin"
 
 # Loop through each host
 for HOST in "${HOSTS[@]}"; do
-  echo "📤 Copying vm-prep.sh to $HOST..."
-  scp "./$SCRIPT_PATH" admin@"$HOST":./"$REMOTE_PATH"/$SCRIPT_PATH
+  echo "📤 Copying scripts to $HOST..."
 
-  scp "./$SCRIPT_PATH2" admin@"$HOST":./"$REMOTE_PATH"/"$SCRIPT_PATH2"
-  scp "$SCRIPT_PATH" admin@"$HOST":"$REMOTE_PATH"
-  echo "🚀 Running vm-prep.sh on $HOST..."
-  ssh admin@"$HOST" "chmod +x $REMOTE_PATH/$SCRIPT_PATH && sudo bash $REMOTE_PATH/$SCRIPT_PATH2"
-  ssh admin@"$HOST" "chmod +x $REMOTE_PATH/$SCRIPT_PATH2 && sudo bash $REMOTE_PATH/$SCRIPT_PATH2"
-  ssh admin@"$HOST" "sudo reboot"
+  scp "./$SCRIPT1" "./$SCRIPT2" admin@"$HOST":"$REMOTE_PATH"/
+
+  echo "🚀 Running scripts on $HOST..."
+
+  ssh -tt admin@"$HOST" "
+    chmod +x $REMOTE_PATH/$SCRIPT1 $REMOTE_PATH/$SCRIPT2 &&
+    sudo bash $REMOTE_PATH/$SCRIPT1 &&
+    sudo bash $REMOTE_PATH/$SCRIPT2 &&
+    sudo reboot
+  "
+
   echo "✅ Finished on $HOST."
 done
