@@ -42,6 +42,8 @@ sysctl --system
 echo "🔧 Enabling time synchronization..."
 systemctl enable --now chronyd
 
+sudo dnf install clevis clevis-luks clevis-udisks2 clevis-systemd clevis-tpm2
+
 echo "✅ Fedora machine is now ready with:"
 echo "- Ansible installed"
 echo "- Hypervisor (KVM) ready"
