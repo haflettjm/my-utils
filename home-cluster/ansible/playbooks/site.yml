@@ -1,0 +1,17 @@
+- name: Set up Hypervisors
+  hosts: hypervisors
+  become: yes
+  roles:
+    - hypervisor
+
+- name: Set up Control Plane Nodes
+  hosts: control_planes
+  become: yes
+  roles:
+    - control-plane
+
+- name: Set up Worker Nodes
+  hosts: workers
+  become: yes
+  roles:
+    - worker-node

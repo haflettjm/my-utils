@@ -1,13 +1,12 @@
 #!/bin/bash
 ## Supports (Fedora && Redhat)
-
 set -e  # Exit immediately if a command exits with a non-zero status.
 
 # Variables
 USER_NAME="admin"  # (main non-root user)
 
 echo "🔧 Updating system..."
-dnf update -y
+sudo -S dnf update -y
 
 echo "🔧 Installing base tools..."
 dnf install -y vim curl wget git net-tools htop iptables socat chrony bash-completion
