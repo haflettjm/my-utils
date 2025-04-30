@@ -3,9 +3,9 @@
 # Define your hypervisors
 HOSTS=(
   "192.168.4.242"
-  # "192.168.4.99"
-  # "192.168.4.112"
-  # "192.168.4.98"
+  "192.168.4.99"
+  "192.168.4.112"
+  "192.168.4.98"
 )
 
 # Local paths to your scripts
@@ -19,14 +19,13 @@ REMOTE_PATH="~/admin"
 for HOST in "${HOSTS[@]}"; do
   echo "📤 Copying scripts to $HOST..."
 
-  scp "./$SCRIPT1" "./$SCRIPT2" admin@"$HOST":"$REMOTE_PATH"/
+  scp "./$SCRIPT1" admin@"$HOST":"$REMOTE_PATH"/
 
   echo "🚀 Running scripts on $HOST..."
 
   ssh -tt admin@"$HOST" "
     chmod +x $REMOTE_PATH/$SCRIPT1 $REMOTE_PATH/$SCRIPT2 &&
     sudo bash $REMOTE_PATH/$SCRIPT1 &&
-    sudo bash $REMOTE_PATH/$SCRIPT2 &&
     sudo reboot
   "
 

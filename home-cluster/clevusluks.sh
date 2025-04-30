@@ -6,24 +6,32 @@ sudo dnf install -y clevis clevis-luks clevis-systemd clevis-dracut clevis-udisk
 
 echo "[*] Locating encrypted root device..."
 
-# Step 1: Find the device mounted at /
+# Step 1: Get the device mapped to /
 ROOT_MAPPER=$(findmnt -n -o SOURCE /)
 echo "[*] Root mapper: $ROOT_MAPPER"
 
-# Step 2: Walk the device tree to find the crypt parent
+# Step 2: Use lsblk to walk up to the crypt parent
 ROOT_LUKS_DEVICE=$(lsblk -no NAME,TYPE -r | awk -v target="${ROOT_MAPPER##*/}" '
 {
-  map[$1] = $2
+  device=$1; type=$2
+  if (type == "lvm") {
+    lvms[device] = 1
+  }
+  parents[device] = last
+  last = device
 }
 END {
-  for (dev in map) {
-    if (map[dev] == "crypt" && target ~ dev) {
+  for (dev in parents) {
+    if (lvms[target] && parents[dev] == target && type == "crypt") {
       print "/dev/" dev
       exit
     }
   }
 }
 ')
+
+# BETTER: recursively trace up to TYPE=crypt parent
+ROOT_LUKS_DEVICE=$(lsblk -pno NAME,TYPE "$ROOT_MAPPER" | awk '$2=="crypt" {print $1; exit}')
 
 if [ -z "$ROOT_LUKS_DEVICE" ]; then
   echo "[!] Could not locate underlying LUKS device. Exiting."
