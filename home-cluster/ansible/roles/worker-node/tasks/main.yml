@@ -1,0 +1,6 @@
+- name: Include size-specific vars
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ inventory_hostname }}"
+    - "{{ hostvars[inventory_hostname].ansible_host_vars_file }}"
+    - "default"

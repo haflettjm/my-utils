@@ -1,0 +1,57 @@
+- name: Create user-data for VM {{ item }}
+  copy:
+    dest: "/tmp/cloud-init/user-data-{{ item }}.yaml"
+    content: |
+      #cloud-config
+      users:
+        - default
+        - name: fedora
+          ssh-authorized-keys:
+            - {{ lookup('file', '~/.ssh/id_ed25519.pub') }}
+          sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+          shell: /bin/bash
+      hostname: {{ vm_prefix }}-{{ item }}
+
+- name: Install cloud-init tools
+  become: true
+  package:
+    name:
+      - cloud-utils
+      - cloud-utils-cloud-localds
+      - cloud-utils-growpart
+      - cloud-utils-cloud-init
+      - genisoimage
+    state: present
+
+- name: Create meta-data for VM {{ item }}
+  copy:
+    dest: "/tmp/cloud-init/meta-data-{{ item }}.yaml"
+    content: |
+      instance-id: {{ vm_prefix }}-{{ item }}
+      local-hostname: {{ vm_prefix }}-{{ item }}
+
+- name: Create VM disk from base image
+  command: >
+    qemu-img create -f qcow2 -F qcow2 -b {{ vm_image_path }}/{{ vm_base_image }}
+    {{ vm_image_path }}/{{ vm_prefix }}-{{ item }}.qcow2
+  args:
+    creates: "{{ vm_image_path }}/{{ vm_prefix }}-{{ item }}.qcow2"
+
+- name: Launch VM with virt-install
+  command: >
+    virt-install
+    --name {{ vm_prefix }}-{{ item }}
+    --ram {{ vm_ram }}
+    --vcpus {{ vm_vcpus }}
+    --disk path={{ vm_image_path }}/{{ vm_prefix }}-{{ item }}.qcow2,format=qcow2
+    --os-variant {{ vm_os_variant }}
+    --import
+    --network network=default
+    --graphics none
+    --noautoconsole
+    --noreboot
+    --wait=-1
+    --cloud-init user-data=/tmp/cloud-init/user-data-{{ item }}.yaml,meta-data=/tmp/cloud-init/meta-data-{{ item }}.yaml
+    --print-xml > /tmp/{{ vm_prefix }}-{{ item }}.xml && virsh define /tmp/{{ vm_prefix }}-{{ item }}.xml
+  args:
+    creates: "/etc/libvirt/qemu/{{ vm_prefix }}-{{ item }}.xml"

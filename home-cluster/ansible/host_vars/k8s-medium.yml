@@ -1,0 +1,8 @@
+vm_prefix: k8s-medium
+vm_count: 3
+vm_vcpus: 4
+vm_ram: 8192
+vm_disk_size: 40
+vm_os_variant: generic
+vm_image_path: /var/lib/libvirt/images
+vm_base_image: Fedora-Cloud-Base-Generic-42-1.10.x86_64.qcow2

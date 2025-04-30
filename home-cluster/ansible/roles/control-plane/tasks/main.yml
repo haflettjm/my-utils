@@ -1,0 +1,7 @@
+- name: Install Kubernetes packages
+  include_tasks: ../common/tasks/k8s-setup.yml
+
+- name: Initialize control plane
+  command: kubeadm init --pod-network-cidr=10.244.0.0/16
+  args:
+    creates: /etc/kubernetes/admin.conf

@@ -1,1 +1,5 @@
-env
+- name: Provision VMs on Hypervisors
+  hosts: hypervisors
+  become: true
+  roles:
+    - hypervisor

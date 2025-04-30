@@ -1,0 +1,103 @@
+- name: Load host-specific sizing profile
+  include_vars: "host_vars/{{ hostvars[inventory_hostname].ansible_host_vars_file }}.yml"
+
+- name: Create cloud-init directory
+  file:
+    path: "/tmp/cloud-init"
+    state: directory
+    mode: 0755
+
+- name: Ensure Fedora base image exists on hypervisor
+  block:
+    - name: Create image directory if it doesn't exist
+      file:
+        path: "{{ vm_image_path }}"
+        state: directory
+        mode: "0755"
+
+    - name: Check if Fedora image already exists
+      stat:
+        path: "{{ vm_image_path }}/{{ vm_base_image }}"
+      register: fedora_image
+
+    - name: Download Fedora Cloud image
+      when: not fedora_image.stat.exists
+      get_url:
+        url: "https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2"
+        dest: "{{ vm_image_path }}/{{ vm_base_image }}"
+        mode: "0644"
+
+- name: Create cloud-init user-data
+  template:
+    src: user-data.j2
+    dest: "/tmp/cloud-init/user-data-{{ item }}.yaml"
+  loop: "{{ range(1, vm_count + 1) | list }}"
+  vars:
+    ssh_public_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+
+- name: Create cloud-init meta-data
+  template:
+    src: meta-data.j2
+    dest: "/tmp/cloud-init/meta-data-{{ item }}.yaml"
+  loop: "{{ range(1, vm_count + 1) | list }}"
+
+- name: Generate cloud-init ISO for VM
+  command: >
+    cloud-localds /tmp/k8s-{{ item }}-seed.iso /tmp/cloud-init/user-data-{{ item }}.yaml /tmp/cloud-init/meta-data-{{ item }}.yaml
+  loop: "{{ range(1, vm_count + 1) | list }}"
+  args:
+    creates: "/tmp/k8s-{{ item }}-seed.iso"
+
+# ✅ First: Check for existing networks
+- name: List existing libvirt networks
+  command: virsh net-list --all
+  register: libvirt_net_list
+  changed_when: false
+  become: true
+
+# ✅ Then: Copy default network definition to remote
+- name: Copy default network definition
+  copy:
+    src: default-net.xml
+    dest: /tmp/default-net.xml
+    mode: "0644"
+  become: true
+
+- name: Ensure libvirt default network is defined
+  command: >
+    virsh net-define /tmp/default-net.xml
+  args:
+    creates: /etc/libvirt/qemu/networks/default.xml
+  when: "'default' not in libvirt_net_list.stdout"
+  notify:
+    - restart libvirt
+  become: true
+
+- name: Copy default network definition
+  copy:
+    src: default-net.xml
+    dest: /tmp/default-net.xml
+    mode: "0644"
+  become: true
+
+- name: List existing libvirt networks
+  command: virsh net-list --all
+  register: libvirt_net_list
+  changed_when: false
+  become: true
+
+- name: Start libvirt default network
+  command: virsh net-start default
+  when: "'default' in libvirt_net_list.stdout and 'inactive' in libvirt_net_list.stdout"
+  ignore_errors: true
+  become: true
+
+- name: Autostart libvirt default network
+  command: virsh net-autostart default
+  when: "'default' in libvirt_net_list.stdout"
+  ignore_errors: true
+  become: true
+
+- name: Provision each VM
+  include_tasks: provision_vm.yml
+  loop: "{{ range(1, vm_count + 1) | list }}"

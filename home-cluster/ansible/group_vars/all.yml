@@ -1,0 +1,5 @@
+vm_prefix: k8s
+vm_count: 3
+vm_vcpus: 4
+vm_ram: 8192
+vm_disk_size: 40
