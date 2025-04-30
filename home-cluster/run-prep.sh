@@ -4,8 +4,8 @@
 HOSTS=(
   "192.168.4.242"
   # "192.168.4.99"
-  "192.168.4.112"
-  "192.168.4.98"
+  # "192.168.4.112"
+  # "192.168.4.98"
 )
 
 # Local paths to your scripts
@@ -13,7 +13,7 @@ SCRIPT1="vm-prep.sh"
 SCRIPT2="clevusluks.sh"
 
 # Remote directory to copy the scripts to
-REMOTE_PATH="/home/admin"
+REMOTE_PATH="~/admin"
 
 # Loop through each host
 for HOST in "${HOSTS[@]}"; do
